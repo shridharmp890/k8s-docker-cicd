@@ -10,7 +10,7 @@ pipeline {
 
         stage('Clone Code') {
             steps {
-                git ''
+                git 'https://github.com/shridharmp890/k8s-docker-cicd.git'
             }
         }
 
