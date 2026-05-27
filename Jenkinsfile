@@ -1,50 +1,70 @@
 pipeline {
+
     agent any
+
     environment {
-        IMAGE_NAME   = "shridharmp890/devops-app"
-        DOCKER_CREDS = credentials('dockerhub-credentials')
+        DOCKER_IMAGE = "shridhar8899/myapp"
     }
+
     stages {
-        stage('Clone') {
+
+        stage('Clone Code') {
             steps {
-                git 'https://github.com/shridharmp890/k8s-docker-cicd'
+                git ''
             }
         }
+
         stage('Build Docker Image') {
             steps {
-                sh "docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} ."
-                sh "docker tag ${IMAGE_NAME}:${BUILD_NUMBER} ${IMAGE_NAME}:latest"
+                bat 'docker build -t %DOCKER_IMAGE% .'
             }
         }
-        stage('Push to Docker Hub') {
+
+        stage('Docker Login') {
+
             steps {
-                sh "echo ${DOCKER_CREDS_PSW} | docker login -u ${DOCKER_CREDS_USR} --password-stdin"
-                sh "docker push ${IMAGE_NAME}:${BUILD_NUMBER}"
-                sh "docker push ${IMAGE_NAME}:latest"
+
+                withCredentials([usernamePassword(
+                    credentialsId: 'dockerhub-credentials',
+                    usernameVariable: 'shridhar8899',
+                    passwordVariable: 'Shri@8899'
+                )]) {
+
+                    bat 'docker login -u %DOCKER_USER% -p %DOCKER_PASS%'
+                }
             }
         }
-        stage('Deploy to Kubernetes') {
+
+        stage('Push Image') {
             steps {
-                sh "kubectl apply -f k8s/deployment.yaml"
-                sh "kubectl apply -f k8s/service.yaml"
-                sh "kubectl rollout status deployment/devops-app"
+
+                bat 'docker push %DOCKER_IMAGE%'
             }
         }
-        stage('Verify Deployment') {
+
+        stage('Deploy Kubernetes') {
             steps {
-                sh "kubectl get pods"
-                sh "kubectl get services"
-                sh "kubectl get hpa"
+
+                bat 'kubectl apply -f deployment.yaml'
+
+                bat 'kubectl apply -f service.yaml'
             }
         }
     }
+
     post {
+
         success {
-            echo 'App deployed successfully to Kubernetes!'
+            echo 'Deployment Successful!'
         }
+
         failure {
+
             echo 'Deployment failed. Rolling back...'
-            sh 'kubectl rollout undo deployment/devops-app'
+
+            bat 'docker stop mycontainer || exit 0'
+
+            bat 'docker rm mycontainer || exit 0'
         }
     }
 }
