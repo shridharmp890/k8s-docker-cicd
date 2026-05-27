@@ -1,18 +1,7 @@
-# Use official Python slim image
-FROM python:3.9-slim
+Docker file
 
-# Set working directory
-WORKDIR /app
+FROM nginx:latest
 
-# Copy requirements and install
-COPY app/requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY index.html /usr/share/nginx/html/
 
-# Copy application code
-COPY app/ .
-
-# Expose port
-EXPOSE 5000
-
-# Run the application
-CMD ["python", "app.py"]
+EXPOSE 80
